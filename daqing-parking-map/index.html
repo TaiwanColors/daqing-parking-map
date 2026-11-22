@@ -33,11 +33,15 @@ function importRows(rows){
  const ia=0,ib=1,id=3,iu=20,iv=21,ix=23;
  const next={cars:{},motos:{}},negative=/^(false|0|n|no|\u53d6\u6d88|\u9000\u8a02|\u672a\u4e0b\u8a02|\u5426|\u672a\u6210\u4ea4)$/;let booked=0;
  for(const r of rows.slice(1)){
+  // Everything from the 「戶數」 row down (sheet row 102+) is the owner's working/summary area, not sales data.
+  if(String(r[ia]??'').trim()==='戶數')break;
   // Google Visualization includes a numeric column-heading row in this sheet; skip it before treating U/X values as assignments.
   if(String(r[0]??'').trim()==='1'&&String(r[20]??'').trim()==='21'&&String(r[21]??'').trim()==='22')continue;
   const b=String(r[ib]??'').trim().toLowerCase(),c=String(r[2]??'').trim().toLowerCase(),isBooked=(b&&!negative.test(b))||c==='1';
   if(isBooked)booked++;
   const buyer=String(r[id]??'').trim(),household=String(r[ia]??'').trim();
+  // Summary rows at the bottom (e.g. 車位數 total = 43) have no household; skip them so they don't overwrite a real stall.
+  if(!household)continue;
   const rawCar=String(r[iu]??'').trim(),carDigits=rawCar.replace(/^0+(?=\d)/,''),sheetFloor=String(r[iv]??'').trim().toUpperCase().replace(/\s+/g,'');
   const floor=/^B[12]$/.test(sheetFloor)?sheetFloor:(AUTO_BOXES.car.B1[carDigits]?'B1':AUTO_BOXES.car.B2[carDigits]?'B2':'');
   const hasCar=/^\d+$/.test(carDigits)&&Number(carDigits)>=1&&Number(carDigits)<=110&&/^B[12]$/.test(floor);
